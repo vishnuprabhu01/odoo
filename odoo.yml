@@ -1,0 +1,36 @@
+---
+- name: odoo intallation 
+  hosts: all
+  become: yes
+  include_vars: files.yml
+  tasks:
+    - include_vars: files.yml
+    - name: check if the odoo directory present
+      ansible.builtin.stat:
+        path: /opt/odoo
+      register: odoo_file_present
+    - name: Git clone
+      ansible.builtin.git:
+        repo: ' https://github.com/odoo/odoo.git'
+        dest: /opt/odoo
+      when: not odoo_file_present.stat.exists     
+    - name: install the postgres database
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+      -  postgresql 
+      -  postgresql-client
+    - name: installing pip3 
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+       - include_vars: files.yml
+    - name: installing the multiple files
+      apt:
+        name: "{{modules}}" 
+        state: present 
+        update_cache: yes
+   
+       

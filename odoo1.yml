@@ -1,0 +1,76 @@
+---
+- name: odoo intallation 
+  hosts: all
+  become: yes
+  tasks:
+    - name: check if the odoo directory present
+      ansible.builtin.stat:
+        path: /opt/odoo
+      register: odoo_file_present
+    - name: Git clone
+      ansible.builtin.git:
+        repo: 'https://github.com/odoo/odoo.git'
+        dest: /opt/odoo
+      when: not odoo_file_present.stat.exists     
+    - name: install the postgres database
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+      -  postgresql 
+      -  postgresql-client
+      -  acl
+    - name: installing pip3 
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+    - name: change postgres network binding
+      lineinfile:
+        path: /etc/postgresql/12/main/postgresql.conf
+        regexp: '# listen_addresses'
+        line: "listen_addresses = '*'"
+
+    - name: change postgres pg hba access
+      lineinfile:
+        path: /etc/postgresql/12/main/pg_hba.conf
+        regexp: 'host  all  all 0.0.0.0/0 md5'
+        line: 'host  all  all 0.0.0.0/0 md5'
+
+    - name: start postgresql server
+      service:
+        enabled: yes
+        name: postgresql
+        state: restarted
+    - pip:
+        name: psycopg2-binary
+    - name: create postgresql user
+      postgresql_user:
+        user: "myuser"
+        password: "myuer@123"
+        role_attr_flags: "CREATEDB,NOSUPERUSER"
+      become: yes
+      become_user: postgres
+    - name: create postgresql db
+      postgresql_db:
+        name: "mydb"
+        state: present
+      become: yes
+      become_user: postgres
+    - include_vars: files.yml  
+    - name: installing the multiple files
+      apt:
+        name: "{{modules}}" 
+        state: present 
+        update_cache: yes  
+    - name: Install Community installation setup
+      pip:
+        name: 
+        - setuptools
+        - wheel
+        chdir: /opt/odoo
+    - name: Install specified python requirements
+      pip:
+        requirements: requirements.txt 
+        chdir: /opt/odoo
+        

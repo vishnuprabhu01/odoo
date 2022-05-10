@@ -1,0 +1,11 @@
+---
+- name: print greeting
+  hosts: all
+  become: yes
+  tasks:
+    - include_vars: files.yml
+    - name: installing the multiple files
+      apt:
+        name: "{{modules}}" 
+        state: present 
+        update_cache: yes
