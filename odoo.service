@@ -1,0 +1,15 @@
+[Unit] 
+Description=Odoo 
+After=postgresql.service 
+ 
+[Service] 
+Type=simple 
+User=root
+Group=root
+ExecStart=/usr/bin/python3 /opt/odoo/odoo-bin --addons-path=/opt/odoo/addons -d mydb
+ 
+[Install] 
+WantedBy=multi-user.target
+
+
+
